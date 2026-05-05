@@ -1,0 +1,5 @@
+# 敏感配置（含 Cloudflare API Token 等）
+.env
+
+# 运行时数据（n8n 工作流元数据、postgres 数据、caddy 证书）
+data/
