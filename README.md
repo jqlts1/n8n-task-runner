@@ -23,7 +23,6 @@
 | 数据位置 | Docker named volume `n8n_data`（藏在 `/var/lib/docker/...`） | 项目目录下的 `./data/postgres` 和 `./data/n8n` |
 | 备份方式 | 需要 `docker run` 挂载 volume 后 tar | 直接 `tar` 打包 `./data/` 即可 |
 | 自动重启 | ❌ | ✅ `restart: unless-stopped` |
-| 健康检查 | ❌ | ✅ n8n 等 postgres 就绪后再启动 |
 | 时区 | 默认 UTC | 已设为 `Asia/Shanghai` |
 | task-runner | ✅ 完全相同 | ✅ 完全相同 |
 
@@ -40,6 +39,17 @@ docker compose up -d --build
 ### 方案 B：Postgres 版本（推荐长期使用）
 
 **启动前必改**：把 `docker-compose-postgres.yaml` 里两处 `n8n-pg-password-change-me` 改成同一个强密码（postgres 服务和 n8n 的 `DB_POSTGRESDB_PASSWORD` 要一致）。
+
+**首次启动前还需要修一下目录权限**：n8n 容器内是用 `node` 用户（uid=1000）跑的，bind mount 的 `./data/n8n` 默认是宿主机用户所有，容器写不进去会报 `EACCES: permission denied, open '/home/node/.n8n/config'`。先执行：
+
+```bash
+mkdir -p ./data/n8n ./data/postgres
+sudo chown -R 1000:1000 ./data/n8n
+```
+
+postgres 那个目录不用 chown，pg 镜像启动时会自己处理。
+
+然后启动：
 
 ```bash
 docker compose -f docker-compose-postgres.yaml up -d --build
