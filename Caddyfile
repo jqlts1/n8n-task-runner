@@ -4,14 +4,14 @@
     email HenriettaiArmstrongl73@gmail.com
 }
 
-# n8n 反代：监听公网 5678，HTTPS 终止在这里，反代到本机 n8n 的 5680
+# n8n 反代：监听公网 5678，HTTPS 终止在这里，反代到本机 n8n 的 5681
 worker.zhangte.org:5678 {
     tls {
         # DNS-01 challenge 通过 Cloudflare API 验证，不需要 80/443 端口
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     }
 
-    reverse_proxy 127.0.0.1:5680 {
+    reverse_proxy 127.0.0.1:5681 {
         # n8n 用了 websocket（执行进度推送、UI 实时刷新），需要透传
         header_up Host {host}
         header_up X-Real-IP {remote_host}
