@@ -1,11 +1,29 @@
 #!/usr/bin/env bash
-# 交互式部署向导：检查依赖、生成 .env、准备数据目录、可选启动 stack。
-# 重复运行安全：已有的 .env 值会被保留，缺什么补什么。
+# n8n + Caddy HTTPS 部署向导
+# ===========================
+#
+# 功能：
+#   - 检查依赖：docker / docker compose v2 / openssl
+#   - 生成或补全 .env：必填项交互填写，secrets 自动随机生成
+#   - 准备 ./data 目录并把 ./data/n8n 改成 uid=1000（n8n 容器需要）
+#   - 可选：docker compose up -d --build 启动整套 stack
+#
+# 部署前你需要准备的 3 样东西：
+#   1) 已托管在 Cloudflare 的域名，A 记录指向本机公网 IP
+#   2) Cloudflare API Token（权限 Zone → DNS → Edit）
+#   3) 防火墙 / 安全组放行 5678/tcp 入站
 #
 # 用法：
-#   ./setup.sh         首次部署或缺值时引导填写
-#   ./setup.sh -y      所有值已配置时跳过启动确认，直接 docker compose up -d --build
-#                      （升级 n8n 版本：改 image tag 后 ./setup.sh -y 一键重建）
+#   ./setup.sh         首次部署或缺值时引导填写；最后会问要不要启动
+#   ./setup.sh -y      跳过启动确认，直接 docker compose up -d --build
+#                      （典型场景：升级 n8n 版本——改 image tag 后 ./setup.sh -y）
+#   ./setup.sh -h      显示本帮助
+#
+# 重复运行安全：
+#   - 已存在 .env 的值不会再问，要修改请直接编辑 .env
+#   - 不会覆盖 ./data/postgres 或 ./data/n8n
+#
+# 详见 README.md
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -14,13 +32,20 @@ ENV_FILE=".env"
 COMPOSE_FILE="docker-compose-postgres.yaml"
 AUTO_YES=0
 
+print_help() {
+    # 打印从第 2 行起、到第一个空注释 # 之前的整段文档
+    awk '
+        NR == 1 { next }
+        /^#$/ || /^# / { sub(/^# ?/, ""); print; next }
+        { exit }
+    ' "$0"
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
-        -y|--yes) AUTO_YES=1; shift ;;
-        -h|--help)
-            sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
-            exit 0 ;;
-        *) echo "未知参数: $1" >&2; exit 1 ;;
+        -y|--yes)  AUTO_YES=1; shift ;;
+        -h|--help) print_help; exit 0 ;;
+        *) echo "未知参数: $1" >&2; echo "用 -h 查看帮助" >&2; exit 1 ;;
     esac
 done
 
