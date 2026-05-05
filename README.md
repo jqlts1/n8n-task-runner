@@ -4,6 +4,29 @@
 
 ---
 
+## 全新机器一键部署 HTTPS（推荐）
+
+`docker-compose-postgres.yaml` 配套的 `setup.sh` 是一个交互式向导，自动完成：依赖检查、`.env` 生成（自动随机 secrets、缺啥补啥）、数据目录权限、可选启动。
+
+**部署前你只需要准备 3 样东西**：
+
+1. 一个**已托管在 Cloudflare** 的域名，且有 A 记录指向本机公网 IP（如 `worker.example.com`）
+2. 一个 **Cloudflare API Token**（权限 `Zone → DNS → Edit`，建议限定到对应 zone）—— 在 https://dash.cloudflare.com/profile/api-tokens 创建
+3. 防火墙 / 云厂商安全组放行 **5678/tcp** 入站（HTTPS 终止端口由 Caddy 守在这）
+
+然后：
+
+```bash
+git clone <本仓库> && cd n8n-task-runner
+./setup.sh
+```
+
+向导跑完即部署完成，访问 `https://<你的域名>:5678`。证书由 Caddy 通过 DNS-01 challenge 自动签发，无需 80/443 暴露。
+
+> 重复运行 `setup.sh` 是安全的——已有 `.env` 里的值会保留，只问缺失项。
+
+---
+
 ## 文件总览
 
 | 文件 | 数据库 | 数据存储 | 适用场景 |
