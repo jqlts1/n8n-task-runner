@@ -1,7 +1,7 @@
 # 阶段1: 获取静态 ffmpeg
 FROM mwader/static-ffmpeg:6.1.1 AS ffmpeg-source
 # 阶段2: 主镜像
-FROM n8nio/runners:2.14.2
+FROM n8nio/runners:2.19.2
 USER root
 
 

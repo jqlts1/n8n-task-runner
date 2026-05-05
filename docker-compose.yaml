@@ -1,6 +1,6 @@
 services:
   n8n:
-    image: n8nio/n8n:2.14.2
+    image: n8nio/n8n:2.19.2
     container_name: n8n-main
     environment:
       - N8N_RUNNERS_ENABLED=true
