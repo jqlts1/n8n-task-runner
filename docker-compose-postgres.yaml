@@ -34,12 +34,17 @@ services:
       - N8N_RUNNERS_AUTH_TOKEN=your-secret-here
       - N8N_NATIVE_PYTHON_RUNNER=true
 
+      # ---- 公网访问相关 ----
+      - N8N_HOST=worker.zhangte.org
+      - N8N_PROTOCOL=http
+      - N8N_PORT=5678
+      - WEBHOOK_URL=http://worker.zhangte.org:5678/
+
       # ---- 其它通用 ----
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Shanghai
       - TZ=Asia/Shanghai
-      - WEBHOOK_URL=http://worker.zhangte.org:5678/
     ports:
       - "5678:5678"
     volumes:
