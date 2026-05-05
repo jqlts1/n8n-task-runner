@@ -1,12 +1,28 @@
 #!/usr/bin/env bash
 # 交互式部署向导：检查依赖、生成 .env、准备数据目录、可选启动 stack。
 # 重复运行安全：已有的 .env 值会被保留，缺什么补什么。
+#
+# 用法：
+#   ./setup.sh         首次部署或缺值时引导填写
+#   ./setup.sh -y      所有值已配置时跳过启动确认，直接 docker compose up -d --build
+#                      （升级 n8n 版本：改 image tag 后 ./setup.sh -y 一键重建）
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
 ENV_FILE=".env"
 COMPOSE_FILE="docker-compose-postgres.yaml"
+AUTO_YES=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -y|--yes) AUTO_YES=1; shift ;;
+        -h|--help)
+            sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+            exit 0 ;;
+        *) echo "未知参数: $1" >&2; exit 1 ;;
+    esac
+done
 
 if [ -t 1 ]; then
     RED=$'\033[31m'; GREEN=$'\033[32m'; YELLOW=$'\033[33m'; BLUE=$'\033[34m'
@@ -45,34 +61,32 @@ load_env() {
     set +a
 }
 
-# ---------- 询问一个值（已存在则回车保留） ----------
+# ---------- 询问一个值（已存在则静默保留，要改请直接编辑 .env） ----------
 ask() {
     local prompt="$1" var="$2" current="${!2:-}" input=""
     if [ -n "$current" ]; then
-        read -rp "  $prompt [当前: $current] (回车保留): " input
-        [ -n "$input" ] && printf -v "$var" '%s' "$input"
-    else
-        while [ -z "$input" ]; do
-            read -rp "  $prompt: " input
-            [ -z "$input" ] && warn "不能为空"
-        done
-        printf -v "$var" '%s' "$input"
+        ok "$prompt: $current"
+        return
     fi
+    while [ -z "$input" ]; do
+        read -rp "  $prompt: " input
+        [ -z "$input" ] && warn "不能为空"
+    done
+    printf -v "$var" '%s' "$input"
 }
 
-# ---------- 询问敏感值（不回显当前值） ----------
+# ---------- 询问敏感值（不回显具体内容） ----------
 ask_secret() {
     local prompt="$1" var="$2" current="${!2:-}" input=""
     if [ -n "$current" ]; then
-        read -rp "  $prompt [已配置，回车保留 / 输入新值替换]: " input
-        [ -n "$input" ] && printf -v "$var" '%s' "$input"
-    else
-        while [ -z "$input" ]; do
-            read -rp "  $prompt: " input
-            [ -z "$input" ] && warn "不能为空"
-        done
-        printf -v "$var" '%s' "$input"
+        ok "$prompt: 已配置"
+        return
     fi
+    while [ -z "$input" ]; do
+        read -rp "  $prompt: " input
+        [ -z "$input" ] && warn "不能为空"
+    done
+    printf -v "$var" '%s' "$input"
 }
 
 # ---------- 生成随机密钥 ----------
@@ -107,7 +121,7 @@ main() {
     load_env
 
     echo ""
-    log "请填写部署参数（已有的值回车保留）"
+    log "检查 .env 配置（已存在的值自动保留，要修改请直接编辑 .env）"
 
     ask        "域名（已在 Cloudflare 托管，且 A 记录指向本机公网 IP）" DOMAIN
     ask        "ACME 注册邮箱（Let's Encrypt 续期通知发到这）"          ACME_EMAIL
@@ -145,7 +159,13 @@ EOF
     echo "    2. 防火墙 / 云厂商安全组 已放行 5678/tcp 入站"
     echo ""
 
-    read -rp "现在执行 docker compose up -d --build ? [y/N] " yn
+    local yn
+    if [ "$AUTO_YES" -eq 1 ]; then
+        yn="y"
+        log "已传 -y，跳过确认，直接重建启动"
+    else
+        read -rp "现在执行 docker compose up -d --build ? [y/N] " yn
+    fi
     case "$yn" in
         [Yy]*)
             local dc="docker compose -f $COMPOSE_FILE"

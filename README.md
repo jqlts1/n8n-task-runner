@@ -23,7 +23,13 @@ git clone <本仓库> && cd n8n-task-runner
 
 向导跑完即部署完成，访问 `https://<你的域名>:5678`。证书由 Caddy 通过 DNS-01 challenge 自动签发，无需 80/443 暴露。
 
-> 重复运行 `setup.sh` 是安全的——已有 `.env` 里的值会保留，只问缺失项。
+> 重复运行 `setup.sh` 是安全的——已有 `.env` 里的值会自动保留，**不会重复询问**，只问缺失项。要修改某个已配置的值，直接编辑 `.env` 即可。
+
+**升级 n8n 版本** 也用同一个脚本：改 `docker-compose-postgres.yaml` 里的 image tag（如 `n8nio/n8n:2.19.2` → `2.20.0`），然后：
+
+```bash
+./setup.sh -y    # -y 跳过启动确认，直接 docker compose up -d --build
+```
 
 ---
 
