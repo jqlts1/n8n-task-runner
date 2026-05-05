@@ -3,6 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: n8n-postgres
     restart: unless-stopped
+    network_mode: host
     environment:
       - POSTGRES_USER=n8n
       - POSTGRES_PASSWORD=n8n-pg-password-change-me
@@ -16,12 +17,13 @@ services:
     image: n8nio/n8n:2.19.2
     container_name: n8n-main
     restart: unless-stopped
+    network_mode: host
     depends_on:
       - postgres
     environment:
-      # ---- 数据库切到 postgres ----
+      # ---- 数据库切到 postgres（host 网络下，走 127.0.0.1） ----
       - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_HOST=127.0.0.1
       - DB_POSTGRESDB_PORT=5432
       - DB_POSTGRESDB_DATABASE=n8n
       - DB_POSTGRESDB_USER=n8n
@@ -45,8 +47,6 @@ services:
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Shanghai
       - TZ=Asia/Shanghai
-    ports:
-      - "5678:5678"
     volumes:
       # 工作流元数据/凭证加密 key/二进制文件等都在这里，必须备份
       - ./data/n8n:/home/node/.n8n
@@ -57,8 +57,10 @@ services:
       dockerfile: Dockerfile
     container_name: n8n-runner
     restart: unless-stopped
+    network_mode: host
     environment:
-      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-main:5679
+      # host 网络下，task-runner 通过 127.0.0.1 连 n8n 的 broker
+      - N8N_RUNNERS_TASK_BROKER_URI=http://127.0.0.1:5679
       - N8N_RUNNERS_AUTH_TOKEN=your-secret-here
       - N8N_RUNNERS_STDLIB_ALLOW=*
       - N8N_RUNNERS_EXTERNAL_ALLOW=*
