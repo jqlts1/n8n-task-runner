@@ -11,19 +11,13 @@ services:
     volumes:
       # bind mount 到本地，备份/迁移直接打包这个目录即可
       - ./data/postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U n8n -d n8n"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   n8n:
     image: n8nio/n8n:2.19.2
     container_name: n8n-main
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     environment:
       # ---- 数据库切到 postgres ----
       - DB_TYPE=postgresdb
@@ -45,7 +39,7 @@ services:
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Shanghai
       - TZ=Asia/Shanghai
-      # - WEBHOOK_URL=http://你的公网IP:5678/
+      - WEBHOOK_URL=http://worker.zhangte.org:5678/
     ports:
       - "5678:5678"
     volumes:
