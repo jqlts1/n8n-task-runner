@@ -36,16 +36,14 @@ services:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_NATIVE_PYTHON_RUNNER=true
 
-      # ---- 内部监听：只绑回环口，由 Caddy 反代 ----
-      - N8N_LISTEN_ADDRESS=127.0.0.1
+      # ---- 监听地址（宝塔反代到此端口） ----
+      - N8N_LISTEN_ADDRESS=0.0.0.0
       - N8N_PORT=5681
 
-      # ---- 公网访问相关（HTTPS via Caddy） ----
+      # ---- 公网访问（HTTPS 由宝塔处理） ----
       - N8N_HOST=${DOMAIN}
       - N8N_PROTOCOL=https
-      - N8N_EDITOR_BASE_URL=https://${DOMAIN}:5678/
-      - N8N_PROXY_HOPS=1
-      - WEBHOOK_URL=https://${DOMAIN}:5678/
+      - WEBHOOK_URL=https://${DOMAIN}/
 
       # ---- 其它通用 ----
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
@@ -55,24 +53,6 @@ services:
     volumes:
       # 工作流元数据/凭证加密 key/二进制文件等都在这里，必须备份
       - ./data/n8n:/home/node/.n8n
-
-  caddy:
-    # 内置 Cloudflare DNS 插件的 Caddy 镜像，用于 DNS-01 challenge 自动签证书
-    image: slothcroissant/caddy-cloudflaredns:latest
-    container_name: caddy
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      # 全部通过 .env 注入（见 .env.example）
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
-      - DOMAIN=${DOMAIN}
-      - ACME_EMAIL=${ACME_EMAIL}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./data/caddy:/data
-      - ./data/caddy-config:/config
-    depends_on:
-      - n8n
 
   task-runner:
     build:
