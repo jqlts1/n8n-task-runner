@@ -14,7 +14,7 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
 
   n8n:
-    image: n8nio/n8n:2.24.0
+    image: n8nio/n8n:2.29.10
     container_name: n8n-main
     restart: unless-stopped
     network_mode: host
