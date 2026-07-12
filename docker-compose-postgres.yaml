@@ -12,6 +12,32 @@ services:
     volumes:
       # bind mount 到本地，备份/迁移直接打包这个目录即可
       - ./data/postgres:/var/lib/postgresql/data
+    # 🚀 PostgreSQL 高性能配置（128G 内存服务器优化）
+    command: >
+      postgres
+      -c shared_buffers=8GB
+      -c effective_cache_size=64GB
+      -c work_mem=64MB
+      -c maintenance_work_mem=2GB
+      -c max_connections=200
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=64MB
+      -c default_statistics_target=500
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c min_wal_size=2GB
+      -c max_wal_size=8GB
+      -c max_worker_processes=8
+      -c max_parallel_workers_per_gather=4
+      -c max_parallel_workers=8
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 16G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
 
   n8n:
     image: n8nio/n8n:2.29.10
@@ -28,6 +54,9 @@ services:
       - DB_POSTGRESDB_DATABASE=n8n
       - DB_POSTGRESDB_USER=n8n
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      # 🚀 数据库连接池优化（从默认 2 提升到 50）
+      - DB_POSTGRESDB_POOL_SIZE=50
+      - DB_POSTGRESDB_POOL_IDLE_TIMEOUT=60000
 
       # ---- task-runner（n8n 2.x 关键，保持不动） ----
       - N8N_RUNNERS_ENABLED=true
@@ -50,9 +79,33 @@ services:
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Shanghai
       - TZ=Asia/Shanghai
+
+      # 🚀 性能优化：执行历史自动清理（避免数据库膨胀导致查询变慢）
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=336
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=50000
+
+      # 🚀 性能优化：负载和超时
+      - N8N_PAYLOAD_SIZE_MAX=128
+      - EXECUTIONS_TIMEOUT=3600
+      - EXECUTIONS_TIMEOUT_MAX=7200
+
+      # 🚀 日志配置
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=console
     volumes:
       # 工作流元数据/凭证加密 key/二进制文件等都在这里，必须备份
       - ./data/n8n:/home/node/.n8n
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
 
   task-runner:
     build:
@@ -70,3 +123,11 @@ services:
       - TZ=Asia/Shanghai
     depends_on:
       - n8n
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
