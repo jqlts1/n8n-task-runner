@@ -58,12 +58,14 @@ services:
       - DB_POSTGRESDB_POOL_SIZE=50
       - DB_POSTGRESDB_POOL_IDLE_TIMEOUT=60000
 
-      # ---- task-runner（n8n 2.x 关键，保持不动） ----
-      - N8N_RUNNERS_ENABLED=true
+      # ---- task-runner（n8n 2.x 关键） ----
       - N8N_RUNNERS_MODE=external
       - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_NATIVE_PYTHON_RUNNER=true
+      # 🚀 Task Runner 性能优化
+      - N8N_RUNNERS_MAX_CONCURRENCY=10
+      - N8N_RUNNERS_TASK_TIMEOUT=60
 
       # ---- 监听地址（宝塔反代到此端口） ----
       - N8N_LISTEN_ADDRESS=0.0.0.0
@@ -73,6 +75,10 @@ services:
       - N8N_HOST=${DOMAIN}
       - N8N_PROTOCOL=https
       - WEBHOOK_URL=https://${DOMAIN}/
+
+      # 🚀 WebSocket 优化（解决前端离线问题）
+      - N8N_PUSH_BACKEND=websocket
+      - N8N_METRICS=true
 
       # ---- 其它通用 ----
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem

@@ -9,7 +9,7 @@
         "--disable-proto=delete",
         "/opt/runners/task-runner-javascript/dist/start.js"
       ],
-      "health-check-server-port": "5681",
+      "health-check-server-port": "5680",
       "allowed-env": [
         "PATH",
         "GENERIC_TIMEZONE",
