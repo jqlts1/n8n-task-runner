@@ -24,6 +24,9 @@ COPY n8n-task-runners.json /etc/n8n-task-runners.json
 # 5. 确保权限正确
 RUN chown -R runner:runner /home/runner/fonts
 
+# 6. 设置 launcher 健康检查端口，避免与 runner 端口冲突
+ENV N8N_RUNNERS_HEALTH_CHECK_SERVER_PORT=5684
+
 # 切换回 runner 用户
 USER runner
 WORKDIR /home/runner
