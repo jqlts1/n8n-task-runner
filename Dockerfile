@@ -2,7 +2,7 @@
 FROM mwader/static-ffmpeg:6.1.1 AS ffmpeg-source
 
 # 阶段2: 主镜像
-FROM n8nio/runners:2.30.3
+FROM n8nio/runners:2.34.6
 
 USER root
 
